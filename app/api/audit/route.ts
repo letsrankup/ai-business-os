@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid URL format" }, { status: 400 });
     }
 
+    // Call the updated Gemini integration function safely
     const report = await generateAuditReport(url);
 
     return NextResponse.json(report);
