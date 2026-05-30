@@ -1,9 +1,8 @@
- import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from "@google/generative-ai";
 
-// Gemini client initialization (using the environment variable you already have in Vercel)
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+// Gemini client initialization using your existing Vercel environment variable
+const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY || "");
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // ─── SEO Audit ───────────────────────────────────────────────────────────────
 export async function generateAuditReport(url: string) {
@@ -23,16 +22,12 @@ Return a JSON object with this exact structure (no markdown, pure JSON):
 
 Base analysis on the URL's domain, likely industry, and general SEO best practices.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-    },
-  });
-
-  const content = response.text;
-  return JSON.parse(content || "{}");
+  const response = await model.generateContent(prompt);
+  const content = response.response.text();
+  
+  // Clean potential markdown code blocks (like ```json ... ```) if Gemini includes them
+  const cleanJson = content.replace(/```json|```/gi, "").trim();
+  return JSON.parse(cleanJson || "{}");
 }
 
 // ─── Content Generation ───────────────────────────────────────────────────────
@@ -68,15 +63,8 @@ Keywords to include: ${keywords.join(", ") || "None specified"}
 
 Write the content now:`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      temperature: 0.7,
-    },
-  });
-
-  return response.text || "";
+  const response = await model.generateContent(prompt);
+  return response.response.text() || "";
 }
 
 // ─── Proposal Generator ───────────────────────────────────────────────────────
@@ -116,15 +104,8 @@ Structure the proposal with these sections:
 
 Make it professional, persuasive, and client-focused.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      temperature: 0.6,
-    },
-  });
-
-  return response.text || "";
+  const response = await model.generateContent(prompt);
+  return response.response.text() || "";
 }
 
 // ─── Lead Discovery ───────────────────────────────────────────────────────────
@@ -159,16 +140,11 @@ Return a JSON array with this exact structure (pure JSON, no markdown):
 
 Generate realistic but fictional leads. Score should be 60-98.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-    },
-  });
-
-  const content = response.text;
-  const parsed = JSON.parse(content || "{}");
+  const response = await model.generateContent(prompt);
+  const content = response.response.text();
+  
+  const cleanJson = content.replace(/```json|```/gi, "").trim();
+  const parsed = JSON.parse(cleanJson || "{}");
 
   return Array.isArray(parsed) ? parsed : parsed.leads || [];
 }
