@@ -168,3 +168,4 @@ Generate realistic but fictional leads. Score should be 60-98.`;
   // Handle both {leads: [...]} and direct array responses
   return Array.isArray(parsed) ? parsed : parsed.leads || [];
       }
+
