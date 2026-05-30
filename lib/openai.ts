@@ -1,7 +1,8 @@
-import OpenAI from "openai";
+ import { GoogleGenAI } from "@google/genai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// Gemini client initialization (using the environment variable you already have in Vercel)
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 // ─── SEO Audit ───────────────────────────────────────────────────────────────
@@ -22,14 +23,15 @@ Return a JSON object with this exact structure (no markdown, pure JSON):
 
 Base analysis on the URL's domain, likely industry, and general SEO best practices.`;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" },
-    max_tokens: 800,
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+    },
   });
 
-  const content = response.choices[0].message.content;
+  const content = response.text;
   return JSON.parse(content || "{}");
 }
 
@@ -66,14 +68,15 @@ Keywords to include: ${keywords.join(", ") || "None specified"}
 
 Write the content now:`;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [{ role: "user", content: prompt }],
-    max_tokens: 1500,
-    temperature: 0.7,
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+    config: {
+      temperature: 0.7,
+    },
   });
 
-  return response.choices[0].message.content || "";
+  return response.text || "";
 }
 
 // ─── Proposal Generator ───────────────────────────────────────────────────────
@@ -113,14 +116,15 @@ Structure the proposal with these sections:
 
 Make it professional, persuasive, and client-focused.`;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [{ role: "user", content: prompt }],
-    max_tokens: 2000,
-    temperature: 0.6,
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+    config: {
+      temperature: 0.6,
+    },
   });
 
-  return response.choices[0].message.content || "";
+  return response.text || "";
 }
 
 // ─── Lead Discovery ───────────────────────────────────────────────────────────
@@ -155,17 +159,16 @@ Return a JSON array with this exact structure (pure JSON, no markdown):
 
 Generate realistic but fictional leads. Score should be 60-98.`;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" },
-    max_tokens: 1500,
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+    },
   });
 
-  const content = response.choices[0].message.content;
+  const content = response.text;
   const parsed = JSON.parse(content || "{}");
 
-  // Handle both {leads: [...]} and direct array responses
   return Array.isArray(parsed) ? parsed : parsed.leads || [];
-      }
-
+}
