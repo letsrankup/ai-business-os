@@ -1,9 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Standard client initialization with correct SDK class name
+// Initialization using your existing free Gemini API key
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// SET TO FREE GEMINI-PRO: Using standard string format compatible with older packages
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 // ─── SEO Audit ───────────────────────────────────────────────────────────────
 export async function generateAuditReport(url: string) {
@@ -25,7 +27,7 @@ Return a JSON object with this exact structure (no markdown, pure JSON):
 Base analysis on the URL's domain, likely industry, and general SEO best practices.`;
 
     const response = await model.generateContent(prompt);
-    const content = response.response.text(); // Fixed: Added proper function execution
+    const content = response.response.text();
     
     // Clean potential markdown blocks if Gemini wraps the response
     const cleanJson = content.replace(/```json|```/gi, "").trim();
@@ -71,7 +73,7 @@ Keywords to include: ${keywords.join(", ") || "None specified"}
 Write the content now:`;
 
     const response = await model.generateContent(prompt);
-    return response.response.text() || ""; // Fixed: Added proper function execution
+    return response.response.text() || "";
   } catch (err: any) {
     console.error("Gemini Content Error:", err);
     throw new Error(err.message || "Failed to generate content");
@@ -117,7 +119,7 @@ Structure the proposal with these sections:
 Make it professional, persuasive, and client-focused.`;
 
     const response = await model.generateContent(prompt);
-    return response.response.text() || ""; // Fixed: Added proper function execution
+    return response.response.text() || "";
   } catch (err: any) {
     console.error("Gemini Proposal Error:", err);
     throw new Error(err.message || "Failed to generate proposal");
@@ -158,7 +160,7 @@ Return a JSON array with this exact structure (pure JSON, no markdown):
 Generate realistic but fictional leads. Score should be 60-98.`;
 
     const response = await model.generateContent(prompt);
-    const content = response.response.text(); // Fixed: Added proper function execution
+    const content = response.response.text();
     
     const cleanJson = content.replace(/```json|```/gi, "").trim();
     const parsed = JSON.parse(cleanJson || "{}");
