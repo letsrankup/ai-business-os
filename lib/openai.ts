@@ -1,12 +1,14 @@
-import { GoogleGenAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Gemini client initialization using your existing Vercel environment variable
-const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY || "");
+// Standard client initialization with correct SDK class name
+const apiKey = process.env.GEMINI_API_KEY || "";
+const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // ─── SEO Audit ───────────────────────────────────────────────────────────────
 export async function generateAuditReport(url: string) {
-  const prompt = `You are an expert SEO auditor. Analyze the website: ${url}
+  try {
+    const prompt = `You are an expert SEO auditor. Analyze the website: ${url}
 
 Return a JSON object with this exact structure (no markdown, pure JSON):
 {
@@ -22,12 +24,16 @@ Return a JSON object with this exact structure (no markdown, pure JSON):
 
 Base analysis on the URL's domain, likely industry, and general SEO best practices.`;
 
-  const response = await model.generateContent(prompt);
-  const content = response.response.text();
-  
-  // Clean potential markdown code blocks (like ```json ... ```) if Gemini includes them
-  const cleanJson = content.replace(/```json|```/gi, "").trim();
-  return JSON.parse(cleanJson || "{}");
+    const response = await model.generateContent(prompt);
+    const content = response.text(); // Fixed: Directly call .text() from response
+    
+    // Clean potential markdown blocks if Gemini wraps the response
+    const cleanJson = content.replace(/```json|```/gi, "").trim();
+    return JSON.parse(cleanJson || "{}");
+  } catch (err: any) {
+    console.error("Gemini Audit Error:", err);
+    throw new Error(err.message || "Failed to generate Gemini audit report");
+  }
 }
 
 // ─── Content Generation ───────────────────────────────────────────────────────
@@ -41,18 +47,19 @@ interface ContentParams {
 }
 
 export async function generateContent(params: ContentParams): Promise<string> {
-  const { contentType, topic, tone, keywords, targetAudience, wordCount = 500 } = params;
+  try {
+    const { contentType, topic, tone, keywords, targetAudience, wordCount = 500 } = params;
 
-  const typeInstructions: Record<string, string> = {
-    blog: `Write a comprehensive, SEO-optimized blog article of ~${wordCount} words with H2/H3 headers, introduction, body, and conclusion.`,
-    linkedin: `Write a high-engagement LinkedIn post (150-300 words) with a hook, value-packed content, and a call-to-action. Use line breaks for readability.`,
-    email: `Write a professional email campaign with Subject, Preview text, Body (introduction, value proposition, CTA), and sign-off.`,
-    ad: `Write 3 variations of ad copy: one for Facebook, one for Google, one for Instagram. Each should have a headline and body.`,
-    product: `Write a compelling product description (100-200 words) focused on benefits, features, and conversion.`,
-    social: `Write 3 social media posts (Twitter/Instagram/Facebook) with relevant hashtags.`,
-  };
+    const typeInstructions: Record<string, string> = {
+      blog: `Write a comprehensive, SEO-optimized blog article of ~${wordCount} words with H2/H3 headers, introduction, body, and conclusion.`,
+      linkedin: `Write a high-engagement LinkedIn post (150-300 words) with a hook, value-packed content, and a call-to-action. Use line breaks for readability.`,
+      email: `Write a professional email campaign with Subject, Preview text, Body (introduction, value proposition, CTA), and sign-off.`,
+      ad: `Write 3 variations of ad copy: one for Facebook, one for Google, one for Instagram. Each should have a headline and body.`,
+      product: `Write a compelling product description (100-200 words) focused on benefits, features, and conversion.`,
+      social: `Write 3 social media posts (Twitter/Instagram/Facebook) with relevant hashtags.`,
+    };
 
-  const prompt = `You are a world-class ${tone} copywriter.
+    const prompt = `You are a world-class ${tone} copywriter.
 
 Task: ${typeInstructions[contentType] || "Write high-quality content."}
 
@@ -63,8 +70,12 @@ Keywords to include: ${keywords.join(", ") || "None specified"}
 
 Write the content now:`;
 
-  const response = await model.generateContent(prompt);
-  return response.response.text() || "";
+    const response = await model.generateContent(prompt);
+    return response.text() || "";
+  } catch (err: any) {
+    console.error("Gemini Content Error:", err);
+    throw new Error(err.message || "Failed to generate content");
+  }
 }
 
 // ─── Proposal Generator ───────────────────────────────────────────────────────
@@ -80,9 +91,10 @@ interface ProposalParams {
 }
 
 export async function generateProposal(params: ProposalParams): Promise<string> {
-  const { clientName, clientBusiness, projectType, projectDescription, budget, timeline, yourName, yourCompany } = params;
+  try {
+    const { clientName, clientBusiness, projectType, projectDescription, budget, timeline, yourName, yourCompany } = params;
 
-  const prompt = `You are a professional business proposal writer.
+    const prompt = `You are a professional business proposal writer.
 
 Write a complete, professional project proposal with the following details:
 
@@ -104,8 +116,12 @@ Structure the proposal with these sections:
 
 Make it professional, persuasive, and client-focused.`;
 
-  const response = await model.generateContent(prompt);
-  return response.response.text() || "";
+    const response = await model.generateContent(prompt);
+    return response.text() || "";
+  } catch (err: any) {
+    console.error("Gemini Proposal Error:", err);
+    throw new Error(err.message || "Failed to generate proposal");
+  }
 }
 
 // ─── Lead Discovery ───────────────────────────────────────────────────────────
@@ -116,9 +132,10 @@ interface LeadsParams {
 }
 
 export async function discoverLeads(params: LeadsParams) {
-  const { query, industry, count } = params;
+  try {
+    const { query, industry, count } = params;
 
-  const prompt = `You are a B2B lead research specialist.
+    const prompt = `You are a B2B lead research specialist.
 
 Generate ${count} realistic potential business leads based on this criteria:
 Target: ${query}
@@ -140,11 +157,15 @@ Return a JSON array with this exact structure (pure JSON, no markdown):
 
 Generate realistic but fictional leads. Score should be 60-98.`;
 
-  const response = await model.generateContent(prompt);
-  const content = response.response.text();
-  
-  const cleanJson = content.replace(/```json|```/gi, "").trim();
-  const parsed = JSON.parse(cleanJson || "{}");
+    const response = await model.generateContent(prompt);
+    const content = response.text();
+    
+    const cleanJson = content.replace(/```json|```/gi, "").trim();
+    const parsed = JSON.parse(cleanJson || "{}");
 
-  return Array.isArray(parsed) ? parsed : parsed.leads || [];
+    return Array.isArray(parsed) ? parsed : parsed.leads || [];
+  } catch (err: any) {
+    console.error("Gemini Leads Error:", err);
+    throw new Error(err.message || "Failed to discover leads");
+  }
 }
